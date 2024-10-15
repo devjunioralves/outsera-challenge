@@ -9,29 +9,11 @@ services:
       - '3000:3000'
     env_file:
       - .env
-    depends_on:
-      - mysql
     volumes:
       - ./:/app
-    networks:
-      - app-network
-
-  mysql:
-    image: mysql:8.0
-    environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
-    ports:
-      - '3306:3306'
-    volumes:
-      - mysql-data:/var/lib/mysql
-      - ./src/infra/migrations/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - app-network
 
 networks:
   app-network:
     driver: bridge
-
-volumes:
-  mysql-data:
