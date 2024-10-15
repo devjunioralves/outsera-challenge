@@ -24,13 +24,13 @@ export class CSVService implements ICSVService {
     return new Promise((resolve, reject) => {
       fs.createReadStream(this.csvFilePath)
         .pipe(csv({ separator: ';' }))
-        .on('data', (row: any) => {
+        .on('data', (row: IAward) => {
           awards.push({
-            year: parseInt(row.year, 10),
+            year: parseInt(row.year.toString(), 10),
             title: row.title,
             studios: row.studios,
             producers: row.producers,
-            winner: row.winner === 'yes',
+            winner: row.winner.toString() === 'yes',
           })
         })
         .on('end', async () => {
