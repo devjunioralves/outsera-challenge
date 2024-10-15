@@ -36,6 +36,7 @@ Award.init(
   {
     sequelize,
     modelName: 'Award',
+    tableName: 'award',
   }
 )
 
