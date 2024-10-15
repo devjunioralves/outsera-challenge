@@ -15,10 +15,17 @@ const app = express()
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(router)
-
-sequelize.sync({ force: true }).then(async () => {
-  const csvService = container.resolve(CSVService)
-  await csvService.loadCSV()
-})
+;(async () => {
+  try {
+    await sequelize.sync({
+      force: true,
+      logging: false,
+    })
+    const csvService = container.resolve(CSVService)
+    await csvService.loadCSV()
+  } catch (error) {
+    console.error('Error during startup:', error)
+  }
+})()
 
 export default app
