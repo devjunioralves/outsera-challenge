@@ -7,6 +7,8 @@ got two awards faster.
 
 To run the project you need to have npm and node installed. You need to copy the `.env.example` file and rename it to `.env`. After that you need to run the `npm run dev` command to start the project. To run the integration tests you can run `npx jest`
 
+To change the `movielist.csv` file you need replace the file on `src/data`
+
 ### How to run the tests?
 
 - `npx jest`
