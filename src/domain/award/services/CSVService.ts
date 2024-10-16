@@ -12,32 +12,49 @@ export class CSVService implements ICSVService {
   constructor(
     @inject(tokens.AwardRepository)
     private awardRepository: IAwardRepository,
-    private csvFilePath: string = path.join(
-      __dirname,
-      '../../../data/movielist.csv'
-    )
+    private csvFilePath: string = process.env.CSV_FILE_PATH ||
+      path.join(__dirname, '../../../data/movielist.csv')
   ) {}
 
   public async loadCSV(): Promise<void> {
-    const awards: IAward[] = []
+    try {
+      const awards = await this.readCSV()
+      await this.awardRepository.create(awards)
+    } catch (error) {
+      console.error('Error loading CSV:', error)
+      throw new Error('Failed to load CSV data')
+    }
+  }
 
+  private readCSV(): Promise<IAward[]> {
     return new Promise((resolve, reject) => {
+      const awards: IAward[] = []
       fs.createReadStream(this.csvFilePath)
         .pipe(csv({ separator: ';' }))
         .on('data', (row: IAward) => {
-          awards.push({
-            year: parseInt(row.year.toString(), 10),
-            title: row.title,
-            studios: row.studios,
-            producers: row.producers,
-            winner: row.winner.toString() === 'yes',
-          })
+          const award: IAward | null = this.mapRowToAward(row)
+          if (award) awards.push(award)
         })
-        .on('end', async () => {
-          await this.awardRepository.create(awards)
-          resolve()
+        .on('end', () => resolve(awards))
+        .on('error', (error: any) => {
+          console.error('Error reading CSV:', error)
+          reject(error)
         })
-        .on('error', (error: any) => reject(error))
     })
+  }
+
+  private mapRowToAward(row: IAward): IAward | null {
+    try {
+      return {
+        year: parseInt(row.year.toString(), 10),
+        title: row.title,
+        studios: row.studios,
+        producers: row.producers,
+        winner: row.winner.toString() === 'yes',
+      }
+    } catch (error) {
+      console.error('Error mapping row to award:', error)
+      return null
+    }
   }
 }
