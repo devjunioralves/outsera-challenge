@@ -55,9 +55,16 @@ export default class AwardService implements IAwardService {
     const minProducers = intervals.filter((i) => i.interval === minInterval)
     const maxProducers = intervals.filter((i) => i.interval === maxInterval)
 
+    const sortedMinProducers = minProducers
+      .sort((a, b) => a.previousWin - b.previousWin)
+      .slice(0, 2)
+    const sortedMaxProducers = maxProducers
+      .sort((a, b) => b.previousWin - a.previousWin)
+      .slice(0, 2)
+
     return {
-      min: minProducers,
-      max: maxProducers,
+      min: sortedMinProducers,
+      max: sortedMaxProducers,
     }
   }
 }
