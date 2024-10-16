@@ -25,13 +25,8 @@ app.use(router)
       logging: false,
     })
 
-    if (
-      process.env.NODE_ENV !== 'test' &&
-      process.env.NODE_ENV !== 'development'
-    ) {
-      const csvService = container.resolve(CSVService)
-      await csvService.loadCSV()
-    }
+    const csvService = container.resolve(CSVService)
+    await csvService.loadCSV()
   } catch (error) {
     console.error('Error during startup:', error)
   }
