@@ -3,8 +3,11 @@ import { tokens } from '@di/tokens'
 import { CSVService } from '@domain/award/services/CSVService'
 import sequelize from '@infra/sqlite/SqliteConnection'
 import bodyParser from 'body-parser'
+import * as dotenv from 'dotenv'
 import express, { Router } from 'express'
 import { Routes } from './http/Routes'
+
+dotenv.config()
 
 const router = Router()
 const routes = container.resolve<Routes>(tokens.Routes)
@@ -21,8 +24,14 @@ app.use(router)
       force: true,
       logging: false,
     })
-    const csvService = container.resolve(CSVService)
-    await csvService.loadCSV()
+
+    if (
+      process.env.NODE_ENV !== 'test' &&
+      process.env.NODE_ENV !== 'development'
+    ) {
+      const csvService = container.resolve(CSVService)
+      await csvService.loadCSV()
+    }
   } catch (error) {
     console.error('Error during startup:', error)
   }
