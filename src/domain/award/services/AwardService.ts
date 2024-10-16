@@ -16,15 +16,10 @@ export default class AwardService implements IAwardService {
   public async findAll(): Promise<IProducerIntervalsResponse> {
     try {
       const awards: IAwardDataValue[] = await this.awardRepository.findAll()
-
-      if (!awards || awards.length === 0) {
-        throw new Error('No award data available')
-      }
-
       return this.calculateProducerIntervals(awards)
     } catch (error) {
-      console.error('Error fetching awards:', error)
-      throw new Error('Failed to fetch award data')
+      console.error('Error searching awards:', error)
+      throw new Error('Error searching awards')
     }
   }
 
@@ -32,26 +27,28 @@ export default class AwardService implements IAwardService {
     awards: IAwardDataValue[]
   ): IProducerIntervalsResponse {
     try {
-      const producersMap: Map<string, IAwardDataValue[]> = new Map()
-
+      const producerMap: Record<string, number[]> = {}
       awards.forEach((award) => {
-        const producer = award.dataValues.producers
-        if (!producersMap.has(producer)) {
-          producersMap.set(producer, [])
-        }
-        producersMap.get(producer)!.push(award)
+        const producers = award.dataValues.producers
+          .split(/,|and/)
+          .map((producer) => producer.trim())
+        const year = award.dataValues.year
+
+        producers.forEach((producer) => {
+          if (!producerMap[producer]) {
+            producerMap[producer] = []
+          }
+          producerMap[producer].push(year)
+        })
       })
 
       const intervals: IProducerInterval[] = []
+      Object.entries(producerMap).forEach(([producer, years]) => {
+        years.sort((a, b) => a - b)
 
-      producersMap.forEach((producerAwards, producer) => {
-        if (producerAwards.length < 2) return
-
-        producerAwards.sort((a, b) => a.dataValues.year - b.dataValues.year)
-
-        for (let i = 0; i < producerAwards.length - 1; i++) {
-          const previousWin = producerAwards[i].dataValues.year
-          const followingWin = producerAwards[i + 1].dataValues.year
+        for (let i = 0; i < years.length - 1; i++) {
+          const previousWin = years[i]
+          const followingWin = years[i + 1]
           const interval = followingWin - previousWin
 
           intervals.push({
@@ -63,36 +60,26 @@ export default class AwardService implements IAwardService {
         }
       })
 
-      if (intervals.length === 0) {
-        throw new Error('No valid producer intervals found')
+      const minInterval = Math.min(...intervals.map((i) => i.interval))
+      const maxInterval = Math.max(...intervals.map((i) => i.interval))
+
+      const minProducers = intervals.filter((i) => i.interval === minInterval)
+      const maxProducers = intervals.filter((i) => i.interval === maxInterval)
+
+      const sortedMinProducers = minProducers
+        .sort((a, b) => a.previousWin - b.previousWin)
+        .slice(0, 2)
+      const sortedMaxProducers = maxProducers
+        .sort((a, b) => b.previousWin - a.previousWin)
+        .slice(0, 2)
+
+      return {
+        min: sortedMinProducers,
+        max: sortedMaxProducers,
       }
-
-      return this.getMinMaxIntervals(intervals)
     } catch (error) {
-      console.error('Error calculating producer intervals:', error)
-      throw new Error('Failed to calculate producer intervals')
-    }
-  }
-
-  private getMinMaxIntervals(
-    intervals: IProducerInterval[]
-  ): IProducerIntervalsResponse {
-    const minInterval = Math.min(...intervals.map((i) => i.interval))
-    const maxInterval = Math.max(...intervals.map((i) => i.interval))
-
-    const minProducers = intervals.filter((i) => i.interval === minInterval)
-    const maxProducers = intervals.filter((i) => i.interval === maxInterval)
-
-    const sortedMinProducers = minProducers
-      .sort((a, b) => a.previousWin - b.previousWin)
-      .slice(0, 2)
-    const sortedMaxProducers = maxProducers
-      .sort((a, b) => b.previousWin - a.previousWin)
-      .slice(0, 2)
-
-    return {
-      min: sortedMinProducers,
-      max: sortedMaxProducers,
+      console.error('Error calculating producers intervals:', error)
+      throw new Error('Error calculating producers intervals')
     }
   }
 }
