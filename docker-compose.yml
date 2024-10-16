@@ -11,9 +11,3 @@ services:
       - .env
     volumes:
       - ./:/app
-    networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge
