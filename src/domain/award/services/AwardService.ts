@@ -14,41 +14,69 @@ export default class AwardService implements IAwardService {
   ) {}
 
   public async findAll(): Promise<IProducerIntervalsResponse> {
-    const awards: IAwardDataValue[] = await this.awardRepository.findAll()
-    return this.calculateProducerIntervals(awards)
+    try {
+      const awards: IAwardDataValue[] = await this.awardRepository.findAll()
+
+      if (!awards || awards.length === 0) {
+        throw new Error('No award data available')
+      }
+
+      return this.calculateProducerIntervals(awards)
+    } catch (error) {
+      console.error('Error fetching awards:', error)
+      throw new Error('Failed to fetch award data')
+    }
   }
 
   private calculateProducerIntervals(
     awards: IAwardDataValue[]
   ): IProducerIntervalsResponse {
-    const producers = awards.map((award) => award.dataValues.producers)
-    const uniqueProducers = [...new Set(producers)]
+    try {
+      const producersMap: Map<string, IAwardDataValue[]> = new Map()
 
-    const intervals: IProducerInterval[] = []
+      awards.forEach((award) => {
+        const producer = award.dataValues.producers
+        if (!producersMap.has(producer)) {
+          producersMap.set(producer, [])
+        }
+        producersMap.get(producer)!.push(award)
+      })
 
-    uniqueProducers.forEach((producer) => {
-      const producerAwards = awards.filter(
-        (award) => award.dataValues.producers === producer
-      )
+      const intervals: IProducerInterval[] = []
 
-      if (producerAwards.length < 2) return
+      producersMap.forEach((producerAwards, producer) => {
+        if (producerAwards.length < 2) return
 
-      producerAwards.sort((a, b) => a.dataValues.year - b.dataValues.year)
+        producerAwards.sort((a, b) => a.dataValues.year - b.dataValues.year)
 
-      for (let i = 0; i < producerAwards.length - 1; i++) {
-        const previousWin = producerAwards[i].dataValues.year
-        const followingWin = producerAwards[i + 1].dataValues.year
-        const interval = followingWin - previousWin
+        for (let i = 0; i < producerAwards.length - 1; i++) {
+          const previousWin = producerAwards[i].dataValues.year
+          const followingWin = producerAwards[i + 1].dataValues.year
+          const interval = followingWin - previousWin
 
-        intervals.push({
-          producer: producer,
-          interval: interval,
-          previousWin: previousWin,
-          followingWin: followingWin,
-        })
+          intervals.push({
+            producer,
+            interval,
+            previousWin,
+            followingWin,
+          })
+        }
+      })
+
+      if (intervals.length === 0) {
+        throw new Error('No valid producer intervals found')
       }
-    })
 
+      return this.getMinMaxIntervals(intervals)
+    } catch (error) {
+      console.error('Error calculating producer intervals:', error)
+      throw new Error('Failed to calculate producer intervals')
+    }
+  }
+
+  private getMinMaxIntervals(
+    intervals: IProducerInterval[]
+  ): IProducerIntervalsResponse {
     const minInterval = Math.min(...intervals.map((i) => i.interval))
     const maxInterval = Math.max(...intervals.map((i) => i.interval))
 
