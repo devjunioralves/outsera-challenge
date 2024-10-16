@@ -5,7 +5,9 @@ import { IAwardRepository } from '../types/IAwardRepository'
 
 export default class AwardRepository implements IAwardRepository {
   async findAll(): Promise<IAwardDataValue[]> {
-    const awards = await Award.findAll()
+    const awards = await Award.findAll({
+      where: { winner: true },
+    })
     return awards as IAwardDataValue[]
   }
 
