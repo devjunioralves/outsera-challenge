@@ -7,51 +7,6 @@ describe('GET /awards/stats', () => {
   beforeAll(async () => {
     await sequelize.sync({ force: true })
     await Award.destroy({ where: {} })
-    const testAwards = [
-      {
-        year: 1986,
-        title: 'Film A',
-        studios: 'Studio A',
-        producers: 'Producer 1',
-        winner: true,
-      },
-      {
-        year: 1987,
-        title: 'Film B',
-        studios: 'Studio B',
-        producers: 'Producer 1',
-        winner: true,
-      },
-      {
-        year: 2011,
-        title: 'Film C',
-        studios: 'Studio C',
-        producers: 'Producer 2',
-        winner: true,
-      },
-      {
-        year: 2012,
-        title: 'Film D',
-        studios: 'Studio D',
-        producers: 'Producer 2',
-        winner: true,
-      },
-      {
-        year: 1980,
-        title: 'Film E',
-        studios: 'Studio E',
-        producers: 'Producer 3',
-        winner: true,
-      },
-      {
-        year: 1989,
-        title: 'Film F',
-        studios: 'Studio F',
-        producers: 'Producer 3',
-        winner: true,
-      },
-    ]
-    await Award.bulkCreate(testAwards)
   })
 
   afterAll(async () => {
@@ -65,24 +20,18 @@ describe('GET /awards/stats', () => {
     expect(response.body).toEqual({
       min: [
         {
-          producer: 'Producer 1',
+          producer: 'Joel Silver',
           interval: 1,
-          previousWin: 1986,
-          followingWin: 1987,
-        },
-        {
-          producer: 'Producer 2',
-          interval: 1,
-          previousWin: 2011,
-          followingWin: 2012,
+          previousWin: 1990,
+          followingWin: 1991,
         },
       ],
       max: [
         {
-          producer: 'Producer 3',
-          interval: 9,
-          previousWin: 1980,
-          followingWin: 1989,
+          producer: 'Matthew Vaughn',
+          interval: 13,
+          previousWin: 2002,
+          followingWin: 2015,
         },
       ],
     })
